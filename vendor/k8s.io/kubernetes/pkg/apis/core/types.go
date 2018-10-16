@@ -1264,6 +1264,7 @@ type ScaleIOVolumeSource struct {
 	// +optional
 	StoragePool string
 	// Indicates whether the storage for a volume should be ThickProvisioned or ThinProvisioned.
+	// Default is ThinProvisioned.
 	// +optional
 	StorageMode string
 	// The name of a volume already created in the ScaleIO system
@@ -1271,7 +1272,8 @@ type ScaleIOVolumeSource struct {
 	VolumeName string
 	// Filesystem type to mount.
 	// Must be a filesystem type supported by the host operating system.
-	// Ex. "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
+	// Ex. "ext4", "xfs", "ntfs".
+	// Default is "xfs".
 	// +optional
 	FSType string
 	// Defaults to false (read/write). ReadOnly here will force
@@ -1300,6 +1302,7 @@ type ScaleIOPersistentVolumeSource struct {
 	// +optional
 	StoragePool string
 	// Indicates whether the storage for a volume should be ThickProvisioned or ThinProvisioned.
+	// Default is ThinProvisioned.
 	// +optional
 	StorageMode string
 	// The name of a volume created in the ScaleIO system
@@ -1307,7 +1310,8 @@ type ScaleIOPersistentVolumeSource struct {
 	VolumeName string
 	// Filesystem type to mount.
 	// Must be a filesystem type supported by the host operating system.
-	// Ex. "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
+	// Ex. "ext4", "xfs", "ntfs".
+	// Default is "xfs".
 	// +optional
 	FSType string
 	// Defaults to false (read/write). ReadOnly here will force
@@ -1519,7 +1523,7 @@ type CSIPersistentVolumeSource struct {
 
 	// Filesystem type to mount.
 	// Must be a filesystem type supported by the host operating system.
-	// Ex. "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
+	// Ex. "ext4", "xfs", "ntfs".
 	// +optional
 	FSType string
 
@@ -1589,7 +1593,7 @@ type VolumeMount struct {
 	SubPath string
 	// mountPropagation determines how mounts are propagated from the host
 	// to container and the other way around.
-	// When not set, MountPropagationHostToContainer is used.
+	// When not set, MountPropagationNone is used.
 	// This field is beta in 1.10.
 	// +optional
 	MountPropagation *MountPropagationMode
@@ -1626,6 +1630,14 @@ type VolumeDevice struct {
 	Name string
 	// devicePath is the path inside of the container that the device will be mapped to.
 	DevicePath string
+}
+
+// ComputeDevice describes the devices assigned to this container for a given ResourceName
+type ComputeDevice struct {
+	// DeviceIDs is the list of devices assigned to this container
+	DeviceIDs []string
+	// ResourceName is the name of the compute resource
+	ResourceName string
 }
 
 // EnvVar represents an environment variable present in a Container.
@@ -1925,6 +1937,10 @@ type Container struct {
 	// This is an alpha feature and may change in the future.
 	// +optional
 	VolumeDevices []VolumeDevice
+	// ComputeDevices contains the devices assigned to this container
+	// This field is alpha-level and is only honored by servers that enable the DeviceAssignment feature.
+	// +optional
+	ComputeDevices []ComputeDevice
 	// +optional
 	LivenessProbe *Probe
 	// +optional
@@ -3769,6 +3785,30 @@ type Binding struct {
 
 	// Target is the object to bind to.
 	Target ObjectReference
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// ResourceBinding ties a resource to an object.
+type ResourceBinding struct {
+	metav1.TypeMeta
+	// ObjectMeta describes the object that is being bound.
+	// +optional
+	metav1.ObjectMeta
+
+	// Bindings describes the resource that the object should be bound to
+	// +optional
+	Bindings []ComputeDeviceBinding
+}
+
+type ComputeDeviceBinding struct {
+	// ContainerName is the name of the container being bound
+	// +optional
+	ContainerName string
+
+	// ComputeDevices is the devices being bound to the container
+	// +optional
+	ComputeDevices []ComputeDevice
 }
 
 // Preconditions must be fulfilled before an operation (update, delete, etc.) is carried out.

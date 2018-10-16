@@ -343,6 +343,12 @@ const (
 	//
 	// Enables CSI to use raw block storage volumes
 	CSIBlockVolume utilfeature.Feature = "CSIBlockVolume"
+
+	// owner: @dashpole
+	// alpha: v1.12
+	//
+	// Enable Compute Resource Assignment support in containers.
+	ComputeDevice utilfeature.Feature = "ComputeDevice"
 )
 
 func init() {
@@ -401,6 +407,7 @@ var defaultKubernetesFeatureGates = map[utilfeature.Feature]utilfeature.FeatureS
 	KubeletPluginsWatcher:                       {Default: false, PreRelease: utilfeature.Alpha},
 	ResourceQuotaScopeSelectors:                 {Default: false, PreRelease: utilfeature.Alpha},
 	CSIBlockVolume:                              {Default: false, PreRelease: utilfeature.Alpha},
+	ComputeDevice:                               {Default: false, PreRelease: utilfeature.Alpha},
 
 	// inherited features from generic apiserver, relisted here to get a conflict if it is changed
 	// unintentionally on either side:

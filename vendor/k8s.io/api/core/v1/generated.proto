@@ -188,7 +188,7 @@ message CSIPersistentVolumeSource {
 
   // Filesystem type to mount.
   // Must be a filesystem type supported by the host operating system.
-  // Ex. "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
+  // Ex. "ext4", "xfs", "ntfs".
   // +optional
   optional string fsType = 4;
 
@@ -407,6 +407,24 @@ message ComponentStatusList {
 
   // List of ComponentStatus objects.
   repeated ComponentStatus items = 2;
+}
+
+// ComputeDevice describes the devices assigned to this container for a given ResourceName
+message ComputeDevice {
+  // DeviceIDs is the list of devices assigned to this container
+  repeated string deviceIDs = 1;
+
+  // ResourceName is the name of the compute resource
+  optional string resourceName = 2;
+}
+
+message ComputeDeviceBinding {
+  // ContainerName is the name of the container being bound
+  // +optional
+  optional string containerName = 1;
+
+  // ComputeDevices is the devices being bound to the container
+  repeated ComputeDevice computeDevices = 2;
 }
 
 // ConfigMap holds configuration data for pods to consume.
@@ -644,6 +662,13 @@ message Container {
   // +patchStrategy=merge
   // +optional
   repeated VolumeDevice volumeDevices = 21;
+
+  // AssignedDevices contains the devices assigned to this container
+  // This field is alpha-level and is only honored by servers that enable the DeviceAssignment feature.
+  // +patchMergeKey=resourceName
+  // +patchStrategy=merge
+  // +optional
+  repeated ComputeDevice computeDevices = 22;
 
   // Periodic probe of container liveness.
   // Container will be restarted if the probe fails.
@@ -3599,6 +3624,17 @@ message ReplicationControllerStatus {
   repeated ReplicationControllerCondition conditions = 6;
 }
 
+// ResourceBinding ties a resource to an object.
+message ResourceBinding {
+  // Standard object's metadata.
+  // More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+  // +optional
+  optional k8s.io.apimachinery.pkg.apis.meta.v1.ObjectMeta metadata = 1;
+
+  // Bindings describes the resource that the object should be bound to
+  repeated ComputeDeviceBinding bindings = 2;
+}
+
 // ResourceFieldSelector represents container resources (cpu, memory) and their output format
 message ResourceFieldSelector {
   // Container name: required for volumes, optional for env vars
@@ -3733,6 +3769,7 @@ message ScaleIOPersistentVolumeSource {
   optional string storagePool = 6;
 
   // Indicates whether the storage for a volume should be ThickProvisioned or ThinProvisioned.
+  // Default is ThinProvisioned.
   // +optional
   optional string storageMode = 7;
 
@@ -3742,7 +3779,8 @@ message ScaleIOPersistentVolumeSource {
 
   // Filesystem type to mount.
   // Must be a filesystem type supported by the host operating system.
-  // Ex. "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
+  // Ex. "ext4", "xfs", "ntfs".
+  // Default is "xfs"
   // +optional
   optional string fsType = 9;
 
@@ -3777,6 +3815,7 @@ message ScaleIOVolumeSource {
   optional string storagePool = 6;
 
   // Indicates whether the storage for a volume should be ThickProvisioned or ThinProvisioned.
+  // Default is ThinProvisioned.
   // +optional
   optional string storageMode = 7;
 
@@ -3786,7 +3825,8 @@ message ScaleIOVolumeSource {
 
   // Filesystem type to mount.
   // Must be a filesystem type supported by the host operating system.
-  // Ex. "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
+  // Ex. "ext4", "xfs", "ntfs".
+  // Default is "xfs".
   // +optional
   optional string fsType = 9;
 
@@ -4509,7 +4549,7 @@ message VolumeMount {
 
   // mountPropagation determines how mounts are propagated from the host
   // to container and the other way around.
-  // When not set, MountPropagationHostToContainer is used.
+  // When not set, MountPropagationNone is used.
   // This field is beta in 1.10.
   // +optional
   optional string mountPropagation = 5;

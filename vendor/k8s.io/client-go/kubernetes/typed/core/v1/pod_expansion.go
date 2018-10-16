@@ -26,6 +26,7 @@ import (
 // The PodExpansion interface allows manually adding extra methods to the PodInterface.
 type PodExpansion interface {
 	Bind(binding *v1.Binding) error
+	BindResource(binding *v1.ResourceBinding) error
 	Evict(eviction *policy.Eviction) error
 	GetLogs(name string, opts *v1.PodLogOptions) *restclient.Request
 }
@@ -33,6 +34,11 @@ type PodExpansion interface {
 // Bind applies the provided binding to the named pod in the current namespace (binding.Namespace is ignored).
 func (c *pods) Bind(binding *v1.Binding) error {
 	return c.client.Post().Namespace(c.ns).Resource("pods").Name(binding.Name).SubResource("binding").Body(binding).Do().Error()
+}
+
+// Bind applies the provided binding to the named pod in the current namespace (binding.Namespace is ignored).
+func (c *pods) BindResource(binding *v1.ResourceBinding) error {
+	return c.client.Post().Namespace(c.ns).Resource("pods").Name(binding.Name).SubResource("resourcebinding").Body(binding).Do().Error()
 }
 
 func (c *pods) Evict(eviction *policy.Eviction) error {

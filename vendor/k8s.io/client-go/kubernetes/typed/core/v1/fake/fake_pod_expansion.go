@@ -34,6 +34,17 @@ func (c *FakePods) Bind(binding *v1.Binding) error {
 	return err
 }
 
+func (c *FakePods) BindResource(binding *v1.ResourceBinding) error {
+	action := core.CreateActionImpl{}
+	action.Verb = "create"
+	action.Resource = podsResource
+	action.Subresource = "resourcebinding"
+	action.Object = binding
+
+	_, err := c.Fake.Invokes(action, binding)
+	return err
+}
+
 func (c *FakePods) GetLogs(name string, opts *v1.PodLogOptions) *restclient.Request {
 	action := core.GenericActionImpl{}
 	action.Verb = "get"

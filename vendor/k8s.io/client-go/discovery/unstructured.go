@@ -67,7 +67,7 @@ func (d *UnstructuredObjectTyper) ObjectKinds(obj runtime.Object) (gvks []schema
 		return gvks, unversioned, nil
 	}
 	if lastErr == nil {
-		lastErr = runtime.NewNotRegisteredErrForType(reflect.TypeOf(obj))
+		lastErr = runtime.NewNotRegisteredErrForType("test", reflect.TypeOf(obj))
 	}
 	return nil, false, lastErr
 }

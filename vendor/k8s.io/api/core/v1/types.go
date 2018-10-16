@@ -1339,6 +1339,7 @@ type ScaleIOVolumeSource struct {
 	// +optional
 	StoragePool string `json:"storagePool,omitempty" protobuf:"bytes,6,opt,name=storagePool"`
 	// Indicates whether the storage for a volume should be ThickProvisioned or ThinProvisioned.
+	// Default is ThinProvisioned.
 	// +optional
 	StorageMode string `json:"storageMode,omitempty" protobuf:"bytes,7,opt,name=storageMode"`
 	// The name of a volume already created in the ScaleIO system
@@ -1346,7 +1347,8 @@ type ScaleIOVolumeSource struct {
 	VolumeName string `json:"volumeName,omitempty" protobuf:"bytes,8,opt,name=volumeName"`
 	// Filesystem type to mount.
 	// Must be a filesystem type supported by the host operating system.
-	// Ex. "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
+	// Ex. "ext4", "xfs", "ntfs".
+	// Default is "xfs".
 	// +optional
 	FSType string `json:"fsType,omitempty" protobuf:"bytes,9,opt,name=fsType"`
 	// Defaults to false (read/write). ReadOnly here will force
@@ -1374,6 +1376,7 @@ type ScaleIOPersistentVolumeSource struct {
 	// +optional
 	StoragePool string `json:"storagePool,omitempty" protobuf:"bytes,6,opt,name=storagePool"`
 	// Indicates whether the storage for a volume should be ThickProvisioned or ThinProvisioned.
+	// Default is ThinProvisioned.
 	// +optional
 	StorageMode string `json:"storageMode,omitempty" protobuf:"bytes,7,opt,name=storageMode"`
 	// The name of a volume already created in the ScaleIO system
@@ -1381,7 +1384,8 @@ type ScaleIOPersistentVolumeSource struct {
 	VolumeName string `json:"volumeName,omitempty" protobuf:"bytes,8,opt,name=volumeName"`
 	// Filesystem type to mount.
 	// Must be a filesystem type supported by the host operating system.
-	// Ex. "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
+	// Ex. "ext4", "xfs", "ntfs".
+	// Default is "xfs"
 	// +optional
 	FSType string `json:"fsType,omitempty" protobuf:"bytes,9,opt,name=fsType"`
 	// Defaults to false (read/write). ReadOnly here will force
@@ -1607,7 +1611,7 @@ type CSIPersistentVolumeSource struct {
 
 	// Filesystem type to mount.
 	// Must be a filesystem type supported by the host operating system.
-	// Ex. "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
+	// Ex. "ext4", "xfs", "ntfs".
 	// +optional
 	FSType string `json:"fsType,omitempty" protobuf:"bytes,4,opt,name=fsType"`
 
@@ -1682,7 +1686,7 @@ type VolumeMount struct {
 	SubPath string `json:"subPath,omitempty" protobuf:"bytes,4,opt,name=subPath"`
 	// mountPropagation determines how mounts are propagated from the host
 	// to container and the other way around.
-	// When not set, MountPropagationHostToContainer is used.
+	// When not set, MountPropagationNone is used.
 	// This field is beta in 1.10.
 	// +optional
 	MountPropagation *MountPropagationMode `json:"mountPropagation,omitempty" protobuf:"bytes,5,opt,name=mountPropagation,casttype=MountPropagationMode"`
@@ -1719,6 +1723,14 @@ type VolumeDevice struct {
 	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
 	// devicePath is the path inside of the container that the device will be mapped to.
 	DevicePath string `json:"devicePath" protobuf:"bytes,2,opt,name=devicePath"`
+}
+
+// ComputeDevice describes the devices assigned to this container for a given ResourceName
+type ComputeDevice struct {
+	// DeviceIDs is the list of devices assigned to this container
+	DeviceIDs []string `json:"deviceIDs" protobuf:"bytes,1,opt,name=deviceIDs"`
+	// ResourceName is the name of the compute resource
+	ResourceName string `json:"resourceName" protobuf:"bytes,2,opt,name=resourceName"`
 }
 
 // EnvVar represents an environment variable present in a Container.
@@ -2070,6 +2082,12 @@ type Container struct {
 	// +patchStrategy=merge
 	// +optional
 	VolumeDevices []VolumeDevice `json:"volumeDevices,omitempty" patchStrategy:"merge" patchMergeKey:"devicePath" protobuf:"bytes,21,rep,name=volumeDevices"`
+	// AssignedDevices contains the devices assigned to this container
+	// This field is alpha-level and is only honored by servers that enable the DeviceAssignment feature.
+	// +patchMergeKey=resourceName
+	// +patchStrategy=merge
+	// +optional
+	ComputeDevices []ComputeDevice `json:"computeDevices,omitempty" patchStrategy:"merge" patchMergeKey:"resourceName" protobuf:"bytes,22,rep,name=computeDevices"`
 	// Periodic probe of container liveness.
 	// Container will be restarted if the probe fails.
 	// Cannot be updated.
@@ -4232,6 +4250,29 @@ type Binding struct {
 
 	// The target object that you want to bind to the standard object.
 	Target ObjectReference `json:"target" protobuf:"bytes,2,opt,name=target"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// ResourceBinding ties a resource to an object.
+type ResourceBinding struct {
+	metav1.TypeMeta `json:",inline"`
+	// Standard object's metadata.
+	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// +optional
+	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
+
+	// Bindings describes the resource that the object should be bound to
+	Bindings []ComputeDeviceBinding `json:"bindings,omitempty" protobuf:"bytes,2,rep,name=bindings"`
+}
+
+type ComputeDeviceBinding struct {
+	// ContainerName is the name of the container being bound
+	// +optional
+	ContainerName string `json:"containerName,omitempty" protobuf:"bytes,1,opt,name=containerName"`
+
+	// ComputeDevices is the devices being bound to the container
+	ComputeDevices []ComputeDevice `json:"computeDevices,omitempty" protobuf:"bytes,2,rep,name=computeDevices"`
 }
 
 // Preconditions must be fulfilled before an operation (update, delete, etc.) is carried out.

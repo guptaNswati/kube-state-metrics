@@ -190,6 +190,12 @@ var (
 		append(descPodLabelsDefaultLabels, "container", "node"),
 		nil,
 	)
+	descPodContainerComputeDevice = prometheus.NewDesc(
+		"kube_pod_container_compute_device",
+		"ID of the Compute Device assigned to the container.",
+		append(descPodLabelsDefaultLabels, "device_id", "container", "node", "resource"),
+		nil,
+	)
 	descPodSpecVolumesPersistentVolumeClaimsInfo = prometheus.NewDesc(
 		"kube_pod_spec_volumes_persistentvolumeclaims_info",
 		"Information about persistentvolumeclaim volumes in a pod.",
@@ -265,6 +271,7 @@ func (pc *podCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- descPodSpecVolumesPersistentVolumeClaimsReadOnly
 	ch <- descPodContainerResourceRequests
 	ch <- descPodContainerResourceLimits
+	ch <- descPodContainerComputeDevice
 
 	if !pc.opts.DisablePodNonGenericResourceMetrics {
 		ch <- descPodContainerResourceRequestsCPUCores
@@ -456,6 +463,13 @@ func (pc *podCollector) collectPod(ch chan<- prometheus.Metric, p v1.Pod) {
 	for _, c := range p.Spec.Containers {
 		req := c.Resources.Requests
 		lim := c.Resources.Limits
+
+		if c.ComputeDevices != nil {
+			for _, device := range c.ComputeDevices[0].DeviceIDs {
+				addGauge(descPodContainerComputeDevice, 1, device, c.Name, nodeName,
+					sanitizeLabelName(string(c.ComputeDevices[0].ResourceName)))
+			}
+		}
 
 		for resourceName, val := range req {
 			switch resourceName {
